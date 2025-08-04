@@ -1,6 +1,6 @@
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 import pandas as pd
 import json
 from datetime import datetime
@@ -10,15 +10,15 @@ import gspread
 from google.oauth2.service_account import Credentials
 from typing import List, Dict, Any
 
-# Cargar variables de entorno del archivo .env
+# Cargar variables de entorno
 load_dotenv()
 
-# Variables de entorno para Google Sheets
+# Variables de entorno
 GOOGLE_DRIVE_FILE_ID = os.getenv('GOOGLE_DRIVE_FILE_ID')
 GOOGLE_SHEET_RANGE = os.getenv('GOOGLE_SHEET_RANGE')
 GOOGLE_APPLICATION_CREDENTIALS = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
 
-app = FastAPI()
+app = FastAPI(title="Validador Tamaprint", version="1.0.0")
 
 class ItemModel(BaseModel):
     codigo: str
@@ -27,159 +27,214 @@ class ItemModel(BaseModel):
     precio_unitario: float
     precio_total: float
     fecha_entrega: str
+    
+    @validator('cantidad')
+    def cantidad_must_be_positive(cls, v):
+        if v <= 0:
+            raise ValueError('La cantidad debe ser mayor a 0')
+        return v
+    
+    @validator('precio_unitario', 'precio_total')
+    def precio_must_be_positive(cls, v):
+        if v < 0:
+            raise ValueError('El precio debe ser mayor o igual a 0')
+        return v
 
 class CompradorModel(BaseModel):
     nit: str
+    
+    @validator('nit')
+    def nit_must_not_be_empty(cls, v):
+        if not v.strip():
+            raise ValueError('El NIT no puede estar vacío')
+        return v.strip()
 
 class OrdenModel(BaseModel):
     comprador: CompradorModel
     orden_compra: str
     items: List[ItemModel]
+    
+    @validator('items')
+    def items_must_not_be_empty(cls, v):
+        if not v:
+            raise ValueError('La orden debe tener al menos un artículo')
+        return v
 
 class ValidadorOrdenesCompra:
     def __init__(self):
         try:
-            if not GOOGLE_DRIVE_FILE_ID or GOOGLE_DRIVE_FILE_ID == "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms":
-                # Modo demo - crear datos de prueba
-                print("Iniciando en modo DEMO - usando datos de prueba")
-                demo_data = {
-                    'Código SN': ['CN800069933', 'CN67890', 'CN99999'],
-                    'Nº catálogo SN': ['14003793002', 'CAT002', 'CAT003'],
-                    'Descripción': ['Producto Demo 1', 'Producto Demo 2', 'Producto Demo 3'],
-                    'Precio': [100.0, 200.0, 300.0]
-                }
-                self.catalogo = pd.DataFrame(demo_data)
-                print(f"Catalogo demo cargado: {len(self.catalogo)} registros")
-            else:
-                scopes = [
-                    'https://www.googleapis.com/auth/spreadsheets',
-                    'https://www.googleapis.com/auth/drive'
-                ]
-                credentials = Credentials.from_service_account_file(
-                    GOOGLE_APPLICATION_CREDENTIALS,
-                    scopes=scopes
-                )
-                gc = gspread.authorize(credentials)
-                sh = gc.open_by_key(GOOGLE_DRIVE_FILE_ID)
-                # Separar nombre de hoja y rango
-                if '!' in GOOGLE_SHEET_RANGE:
-                    sheet_name, sheet_range = GOOGLE_SHEET_RANGE.split('!')
-                else:
-                    sheet_name = 'Hoja1'
-                    sheet_range = GOOGLE_SHEET_RANGE
-                worksheet = sh.worksheet(sheet_name)
-                data = worksheet.get(sheet_range)
-                headers = data[0]
-                rows = data[1:]
-                self.catalogo = pd.DataFrame(rows, columns=headers)
-                print(f"Catalogo cargado: {len(self.catalogo)} registros")
+            # Validar variables de entorno
+            if not GOOGLE_DRIVE_FILE_ID:
+                raise ValueError("GOOGLE_DRIVE_FILE_ID no está configurado en .env")
+            if not GOOGLE_SHEET_RANGE:
+                raise ValueError("GOOGLE_SHEET_RANGE no está configurado en .env")
+            if not GOOGLE_APPLICATION_CREDENTIALS:
+                raise ValueError("GOOGLE_APPLICATION_CREDENTIALS no está configurado en .env")
             
-            print("Columnas encontradas:", list(self.catalogo.columns))
-            print("Primeras 3 filas del catalogo:")
-            print(self.catalogo.head(3))
-            # Normalizar claves para comparación robusta - convertir NIT a mayúsculas
+            # Verificar archivo de credenciales
+            if not os.path.exists(GOOGLE_APPLICATION_CREDENTIALS):
+                raise FileNotFoundError(f"Archivo de credenciales no encontrado: {GOOGLE_APPLICATION_CREDENTIALS}")
+            
+            # Configurar Google Sheets
+            scopes = [
+                'https://www.googleapis.com/auth/spreadsheets',
+                'https://www.googleapis.com/auth/drive'
+            ]
+            credentials = Credentials.from_service_account_file(
+                GOOGLE_APPLICATION_CREDENTIALS,
+                scopes=scopes
+            )
+            gc = gspread.authorize(credentials)
+            sh = gc.open_by_key(GOOGLE_DRIVE_FILE_ID)
+            
+            # Obtener datos de la hoja
+            if '!' in GOOGLE_SHEET_RANGE:
+                sheet_name, sheet_range = GOOGLE_SHEET_RANGE.split('!')
+            else:
+                sheet_name = 'Hoja1'
+                sheet_range = GOOGLE_SHEET_RANGE
+                
+            worksheet = sh.worksheet(sheet_name)
+            data = worksheet.get(sheet_range)
+            
+            if not data or len(data) < 2:
+                raise ValueError("El catálogo está vacío o no tiene datos válidos")
+                
+            headers = data[0]
+            rows = data[1:]
+            self.catalogo = pd.DataFrame(rows, columns=headers)
+            
+            # Verificar columnas requeridas
+            required_columns = ['Código SN', 'Nº catálogo SN']
+            missing_columns = [col for col in required_columns if col not in self.catalogo.columns]
+            if missing_columns:
+                raise ValueError(f"Columnas faltantes en el catálogo: {missing_columns}")
+            
+            # Crear índice de búsqueda
             self.catalogo['clave_busqueda'] = (
                 self.catalogo['Código SN'].astype(str).str.strip().str.upper() +
                 "|" +
                 self.catalogo['Nº catálogo SN'].astype(str).str.strip().str.lower()
             )
             self.indice_catalogo = self.catalogo.set_index('clave_busqueda')
-            print("Indice de busqueda creado")
-            print("Primeras 3 claves de busqueda:")
-            print(list(self.indice_catalogo.index[:3]))
+            
+            print(f"✅ Catálogo cargado: {len(self.catalogo)} registros")
+            
         except Exception as e:
-            print(f"Error cargando Google Sheets: {e}")
+            print(f"❌ Error inicializando validador: {e}")
             raise
-    def validar_orden(self, orden_json: Dict[str, Any]):
-        print(f"NIT original del JSON: '{orden_json['comprador']['nit']}'")
-        cliente = str(orden_json['comprador']['nit']).strip().upper()  # Convertir a mayúsculas para consistencia
-        print(f"Cliente procesado: '{cliente}'")
-        orden_numero = orden_json['orden_compra']
-        items = orden_json['items']
-        articulos_encontrados = []
-        articulos_no_encontrados = []
-        for item in items:
-            clave_busqueda = f"{cliente}|{str(item['codigo']).strip().lower()}"
-            print(f"Buscando clave: '{clave_busqueda}'")
-            try:
-                registro_catalogo = self.indice_catalogo.loc[clave_busqueda]
-                articulo_valido = {
-                    "codigo": item['codigo'],
-                    "descripcion": item['descripcion'],
-                    "cantidad": item['cantidad'],
-                    "precio_unitario": item['precio_unitario'],
-                    "precio_total": item['precio_total'],
-                    "fecha_entrega": item['fecha_entrega']
-                }
-                articulos_encontrados.append(articulo_valido)
-            except KeyError:
-                articulo_faltante = {
-                    "codigo": item['codigo'],
-                    "descripcion": item['descripcion'],
-                    "cantidad": item['cantidad'],
-                    "motivo": f"La combinación Cliente [{cliente}] + Artículo [{item['codigo']}] NO existe en el catálogo"
-                }
-                articulos_no_encontrados.append(articulo_faltante)
-        todos_existen = len(articulos_no_encontrados) == 0
-        resultado = {
-            "orden_compra": orden_numero,
-            "cliente": cliente,
-            "fecha_validacion": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "TODOS_LOS_ARTICULOS_EXISTEN": todos_existen,
-            "PUEDE_PROCESAR_EN_SAP": todos_existen,
-            "resumen": {
-                "total_articulos": len(items),
-                "articulos_encontrados": len(articulos_encontrados),
-                "articulos_faltantes": len(articulos_no_encontrados),
-                "porcentaje_exito": round(len(articulos_encontrados) / len(items) * 100, 2)
-            },
-            "articulos_listos_para_sap": articulos_encontrados if todos_existen else [],
-            "articulos_que_NO_existen": articulos_no_encontrados,
-            "mensaje": (
-                f"VALIDACION EXITOSA: Todos los {len(items)} articulos existen en el catalogo. La orden puede procesarse en SAP."
-                if todos_existen else 
-                f"VALIDACION FALLIDA: {len(articulos_no_encontrados)} de {len(items)} articulos NO existen en el catalogo. Revisar articulos faltantes antes de procesar en SAP."
-            )
-        }
-        return resultado
 
-print("Iniciando validador...")
-validador = ValidadorOrdenesCompra()
+    def validar_orden(self, orden_json: Dict[str, Any]):
+        try:
+            cliente = str(orden_json['comprador']['nit']).strip().upper()
+            orden_numero = orden_json['orden_compra']
+            items = orden_json['items']
+            
+            if not items:
+                raise ValueError("La orden debe tener al menos un artículo")
+            
+            articulos_encontrados = []
+            articulos_no_encontrados = []
+            
+            for item in items:
+                clave_busqueda = f"{cliente}|{str(item['codigo']).strip().lower()}"
+                
+                try:
+                    registro_catalogo = self.indice_catalogo.loc[clave_busqueda]
+                    articulo_valido = {
+                        "codigo": item['codigo'],
+                        "descripcion": item['descripcion'],
+                        "cantidad": item['cantidad'],
+                        "precio_unitario": item['precio_unitario'],
+                        "precio_total": item['precio_total'],
+                        "fecha_entrega": item['fecha_entrega']
+                    }
+                    articulos_encontrados.append(articulo_valido)
+                except KeyError:
+                    articulo_faltante = {
+                        "codigo": item['codigo'],
+                        "descripcion": item['descripcion'],
+                        "cantidad": item['cantidad'],
+                        "motivo": f"La combinación Cliente [{cliente}] + Artículo [{item['codigo']}] NO existe en el catálogo"
+                    }
+                    articulos_no_encontrados.append(articulo_faltante)
+            
+            todos_existen = len(articulos_no_encontrados) == 0
+            
+            return {
+                "orden_compra": orden_numero,
+                "cliente": cliente,
+                "fecha_validacion": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "TODOS_LOS_ARTICULOS_EXISTEN": todos_existen,
+                "PUEDE_PROCESAR_EN_SAP": todos_existen,
+                "resumen": {
+                    "total_articulos": len(items),
+                    "articulos_encontrados": len(articulos_encontrados),
+                    "articulos_faltantes": len(articulos_no_encontrados),
+                    "porcentaje_exito": round(len(articulos_encontrados) / len(items) * 100, 2)
+                },
+                "articulos_listos_para_sap": articulos_encontrados if todos_existen else [],
+                "articulos_que_NO_existen": articulos_no_encontrados,
+                "mensaje": (
+                    f"VALIDACION EXITOSA: Todos los {len(items)} articulos existen en el catalogo. La orden puede procesarse en SAP."
+                    if todos_existen else 
+                    f"VALIDACION FALLIDA: {len(articulos_no_encontrados)} de {len(items)} articulos NO existen en el catalogo. Revisar articulos faltantes antes de procesar en SAP."
+                )
+            }
+        except Exception as e:
+            raise ValueError(f"Error validando orden: {str(e)}")
+
+# Inicializar validador
+print("🚀 Iniciando Validador Tamaprint...")
+try:
+    validador = ValidadorOrdenesCompra()
+except Exception as e:
+    print(f"❌ Error crítico: {e}")
+    print("💡 Verifica la configuración en .env y el archivo credentials.json")
+    exit(1)
 
 @app.post("/validar-orden")
 async def validar_orden_endpoint(orden: OrdenModel):
     try:
-        print("Recibida peticion de validacion")
-        orden_dict = orden.dict()
-        print(f"JSON completo recibido: {orden_dict}")
-        print(f"Orden: {orden_dict.get('orden_compra', 'N/A')}")
-        print(f"Cliente NIT raw: '{orden_dict.get('comprador', {}).get('nit', 'N/A')}'")
-        print(f"Items: {len(orden_dict.get('items', []))}")
-        resultado = validador.validar_orden(orden_dict)
-        print(f"Validacion completada: {resultado['resumen']['articulos_encontrados']}/{resultado['resumen']['total_articulos']} articulos validos")
+        resultado = validador.validar_orden(orden.dict())
         return JSONResponse(content=resultado, status_code=200)
-    except Exception as e:
-        print(f"Error en validacion: {e}")
+    except ValueError as e:
         return JSONResponse(content={
             "TODOS_LOS_ARTICULOS_EXISTEN": False,
             "PUEDE_PROCESAR_EN_SAP": False,
             "error": str(e),
-            "mensaje": f"ERROR EN VALIDACION: {str(e)}"
+            "mensaje": f"ERROR DE VALIDACIÓN: {str(e)}"
+        }, status_code=400)
+    except Exception as e:
+        return JSONResponse(content={
+            "TODOS_LOS_ARTICULOS_EXISTEN": False,
+            "PUEDE_PROCESAR_EN_SAP": False,
+            "error": str(e),
+            "mensaje": f"ERROR INTERNO: {str(e)}"
         }, status_code=500)
 
 @app.get("/health")
 async def health_check():
-    return {
-        "status": "OK",
-        "catalogo_items": len(validador.catalogo),
-        "timestamp": datetime.now().isoformat()
-    }
+    try:
+        return {
+            "status": "OK",
+            "catalogo_items": len(validador.catalogo),
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        return JSONResponse(content={
+            "status": "ERROR",
+            "error": str(e)
+        }, status_code=500)
 
 @app.get("/debug-catalogo")
 async def debug_catalogo():
-    return {
-        "primeras_5_filas": validador.catalogo.head(5).to_dict(orient='records'),
-        "claves_busqueda": list(validador.indice_catalogo.index[:5])
-    }
-
-# Para desarrollo local con: uvicorn validador:app --reload
+    try:
+        return {
+            "primeras_5_filas": validador.catalogo.head(5).to_dict(orient='records'),
+            "claves_busqueda": list(validador.indice_catalogo.index[:5])
+        }
+    except Exception as e:
+        return JSONResponse(content={
+            "error": str(e)
+        }, status_code=500)

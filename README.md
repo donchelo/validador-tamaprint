@@ -1,77 +1,48 @@
-# 🚀 Validador Tamaprint 2.0
+# 🚀 Validador Tamaprint - Ultra Simplificado
 
-Validador de órdenes de compra integrado con Google Sheets y ngrok para procesamiento automatizado en SAP.
+Validador de órdenes de compra que verifica artículos contra un catálogo en Google Sheets.
 
-## 📋 Descripción
+## ⚡ Inicio Rápido
 
-Este sistema valida automáticamente los artículos de las órdenes de compra contra un catálogo en Google Sheets, separando las órdenes válidas de las que tienen artículos faltantes, y preparándolas para procesamiento RPA en SAP.
-
-## 🔧 Configuración Inicial (Solo la primera vez)
-
-### 1. **Requisitos del Sistema**
-- Python 3.8 o superior
-- Conexión a internet
-- Cuenta de Google con acceso a Google Sheets
-
-### 2. **Configurar Google Sheets**
-1. Crea un Service Account en Google Cloud Console
-2. Descarga el archivo de credenciales como `credentials.json`
-3. Coloca `credentials.json` en la carpeta del proyecto
-4. Comparte tu Google Sheet con el email del Service Account
-
-### 3. **Configurar Variables de Entorno**
-Edita el archivo `.env` con tus datos:
-```env
-GOOGLE_DRIVE_FILE_ID=TU_GOOGLE_SHEET_ID_AQUI
-GOOGLE_SHEET_RANGE=Hoja1!A:Z
-GOOGLE_APPLICATION_CREDENTIALS=credentials.json
-```
-
-### 4. **Instalar Dependencias**
+### 1. Instalar dependencias
 ```bash
 pip install -r requirements.txt
 ```
 
-## 🚀 Uso Diario - Activar Backend
+### 2. Configurar variables de entorno
+Crear archivo `.env`:
+```env
+GOOGLE_DRIVE_FILE_ID=TU_GOOGLE_SHEET_ID
+GOOGLE_SHEET_RANGE=Hoja1!A:Z
+GOOGLE_APPLICATION_CREDENTIALS=credentials.json
+```
 
-### **Opción 1: Automático (Recomendado)**
+### 3. Iniciar servidor
+```bash
+python -m uvicorn validador:app --host 0.0.0.0 --port 8000
+```
 
-1. **Abrir VS Code** en la carpeta del proyecto
-2. **Ejecutar:** Doble clic en `iniciar_validador.bat`
-3. **Esperar:** El script hará todo automáticamente
-4. **Obtener URL:** Se abrirá http://localhost:4040 automáticamente
-
-### **Opción 2: Manual**
-
-1. **Abrir terminal** en VS Code (Ctrl + `)
-2. **Ejecutar FastAPI:**
-   ```bash
-   python -m uvicorn validador:app --host 0.0.0.0 --port 8000
-   ```
-3. **Nueva terminal** (Ctrl + Shift + `)
-4. **Ejecutar ngrok:**
-   ```bash
-   .\ngrok.exe http 8000
-   ```
-5. **Copiar URL** de la salida de ngrok
+O usar el script automático:
+```bash
+iniciar_validador.bat
+```
 
 ## 📍 URLs de Acceso
 
-| Servicio | URL Local | URL Pública |
-|----------|-----------|-------------|
-| **API Principal** | http://localhost:8000 | https://[ID].ngrok-free.app |
-| **Documentación** | http://localhost:8000/docs | https://[ID].ngrok-free.app/docs |
-| **Health Check** | http://localhost:8000/health | https://[ID].ngrok-free.app/health |
-| **Ngrok Dashboard** | http://localhost:4040 | - |
+| Servicio | URL |
+|----------|-----|
+| **API Principal** | http://localhost:8000 |
+| **Documentación** | http://localhost:8000/docs |
+| **Health Check** | http://localhost:8000/health |
 
-## 🔗 Integración con Make.com
+## 🔗 API Endpoints
 
-### **Endpoints para Make.com:**
+### Validar Orden de Compra
+```bash
+POST http://localhost:8000/validar-orden
+```
 
-- **Validación de órdenes:** `https://[TU_URL_NGROK]/validar-orden`
-- **Health Check:** `https://[TU_URL_NGROK]/health`
-
-### **Ejemplo de JSON para validación:**
+**JSON de ejemplo:**
 ```json
 {
   "comprador": {
@@ -91,7 +62,7 @@ pip install -r requirements.txt
 }
 ```
 
-### **Respuesta exitosa:**
+**Respuesta exitosa:**
 ```json
 {
   "TODOS_LOS_ARTICULOS_EXISTEN": true,
@@ -104,97 +75,61 @@ pip install -r requirements.txt
     "articulos_faltantes": 0,
     "porcentaje_exito": 100.0
   },
-  "articulos_listos_para_sap": [...],
   "mensaje": "VALIDACION EXITOSA: Todos los 1 articulos existen en el catalogo..."
 }
 ```
 
-## 🛠 Herramientas de Diagnóstico
+## 🌐 Acceso Público (Opcional)
 
-### **Verificar Sistema:**
+Para exponer la API públicamente:
+```bash
+ngrok.exe http 8000
+```
+
+## 🛠 Verificación del Sistema
+
 ```bash
 python verificar_sistema.py
 ```
 
-Este script verifica:
-- ✅ Versión de Python
-- ✅ Archivos necesarios
-- ✅ Dependencias instaladas
-- ✅ Configuración de .env
-- ✅ Credenciales de Google
-- ✅ Funcionamiento de ngrok
-
 ## 📁 Estructura del Proyecto
 
 ```
-validador-tamaprint-2.0/
-├── validador.py              # Aplicación principal FastAPI
-├── requirements.txt          # Dependencias Python
-├── credentials.json          # Credenciales Google (NO subir a Git)
-├── .env                      # Variables de entorno (NO subir a Git)
-├── ngrok.exe                # Ejecutable ngrok
-├── iniciar_validador.bat    # Script de inicio automático
-├── verificar_sistema.py     # Script de diagnóstico
+validador-tamaprint/
+├── validador.py              # Aplicación principal
+├── requirements.txt          # Dependencias
+├── verificar_sistema.py     # Verificación básica
+├── iniciar_validador.bat    # Script de inicio
 ├── README.md                # Esta documentación
-└── docs/                    # Documentación adicional
+├── .env                     # Variables de entorno
+├── credentials.json         # Credenciales Google
+└── ngrok.exe               # Túnel público (opcional)
 ```
 
-## 🔍 Troubleshooting
+## 🔧 Solución de Problemas
 
-### **Problema:** "Error cargando Google Sheets"
-**Solución:**
-1. Verificar que `credentials.json` existe
-2. Verificar que el Google Sheet ID es correcto
-3. Verificar que el Service Account tiene acceso al Sheet
+### Error: "Puerto en uso"
+```bash
+python -m uvicorn validador:app --host 0.0.0.0 --port 8080
+```
 
-### **Problema:** "Port 8000 already in use"
-**Solución:**
-1. Cerrar todas las ventanas de comandos
-2. Reiniciar el script
+### Error: "Google Sheets no encontrado"
+- Verificar que `credentials.json` existe
+- Verificar que el Google Sheet ID es correcto
+- Verificar que el Service Account tiene acceso
 
-### **Problema:** "Ngrok authentication failed"
-**Solución:**
-1. Registrarse en ngrok.com
-2. Obtener auth token
-3. Ejecutar: `ngrok config add-authtoken TU_TOKEN`
-
-### **Problema:** Validación siempre falla
-**Solución:**
-1. Verificar formato de NITs (deben ser mayúsculas: CN123456)
-2. Verificar nombres de columnas en Google Sheets
-3. Ejecutar `verificar_sistema.py` para diagnóstico
+### Error: "Dependencias faltantes"
+```bash
+pip install -r requirements.txt
+```
 
 ## 📊 Monitoreo
 
-### **Logs importantes:**
-- ✅ "Catalogo cargado: X registros"
-- ✅ "Indice de busqueda creado"
-- ⚠️ "Error cargando Google Sheets"
-- 📍 "Buscando clave: 'CN123456|14003793002'"
-
-### **Métricas clave:**
-- Tiempo de respuesta de validación
-- Porcentaje de éxito de validaciones
-- Número de registros en catálogo
-
-## 🚨 Importante
-
-- ❌ **NO cierres** las ventanas de FastAPI ni ngrok mientras esté en uso
-- ❌ **NO subas** `credentials.json` ni `.env` a Git
-- ✅ **Mantén** ngrok corriendo para que Make.com funcione
-- ✅ **Verifica** regularmente que el túnel ngrok sigue activo
-
-## 🆘 Soporte
-
-Si encuentras problemas:
-
-1. **Ejecutar diagnóstico:** `python verificar_sistema.py`
-2. **Revisar logs** en las ventanas de FastAPI y ngrok
-3. **Verificar conexión** con http://localhost:8000/health
-4. **Reiniciar completamente** cerrando todas las ventanas y ejecutando `iniciar_validador.bat`
+- **Health Check:** `GET /health`
+- **Debug Catálogo:** `GET /debug-catalogo`
+- **Logs:** Revisar terminal donde se ejecuta el servidor
 
 ---
 
-**Versión:** 2.0  
-**Última actualización:** $(Get-Date -Format "yyyy-MM-dd")  
-**Desarrollado con:** FastAPI + Google Sheets + ngrok
+**Versión:** Ultra Simplificada  
+**Desarrollado con:** FastAPI + Google Sheets
