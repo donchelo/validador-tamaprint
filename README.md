@@ -81,6 +81,25 @@ POST http://localhost:8000/validar-orden
 }
 ```
 
+### Health Check
+```bash
+GET http://localhost:8000/health
+```
+
+### Debug Catálogo
+```bash
+GET http://localhost:8000/debug-catalogo
+```
+
+### Cache Management
+```bash
+# Ver estadísticas del cache
+GET http://localhost:8000/cache/stats
+
+# Limpiar cache
+POST http://localhost:8000/cache/clear
+```
+
 ## 🌐 Acceso Público (Opcional)
 
 Para exponer la API públicamente:
@@ -94,18 +113,31 @@ ngrok.exe http 8000
 python verificar_sistema.py
 ```
 
+## 🧪 Tests Unitarios
+
+```bash
+# Ejecutar tests
+python ejecutar_tests.py
+
+# O directamente con pytest
+pytest test_validador.py -v
+```
+
 ## 📁 Estructura del Proyecto
 
 ```
 validador-tamaprint/
 ├── validador.py              # Aplicación principal
+├── test_validador.py         # Tests unitarios
+├── ejecutar_tests.py         # Script para ejecutar tests
 ├── iniciar_validador.ps1    # Script de inicio automático
 ├── verificar_sistema.py     # Verificación del sistema
 ├── requirements.txt          # Dependencias
 ├── README.md                # Esta documentación
 ├── .env                     # Variables de entorno
 ├── credentials.json         # Credenciales Google
-└── ngrok.exe               # Túnel público
+├── ngrok.exe               # Túnel público
+└── validador.log           # Logs de la aplicación
 ```
 
 ## 🔧 Solución de Problemas
