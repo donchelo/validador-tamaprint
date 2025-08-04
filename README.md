@@ -2,30 +2,31 @@
 
 Validador de órdenes de compra que verifica artículos contra un catálogo en Google Sheets.
 
-## ⚡ Inicio Rápido
+## ⚡ Inicio Ultra-Rápido (Recomendado)
 
-### 1. Instalar dependencias
+### Opción 1: Script Automático (Windows)
 ```bash
-pip install -r requirements.txt
-```
-
-### 2. Configurar variables de entorno
-Crear archivo `.env`:
-```env
-GOOGLE_DRIVE_FILE_ID=TU_GOOGLE_SHEET_ID
-GOOGLE_SHEET_RANGE=Hoja1!A:Z
-GOOGLE_APPLICATION_CREDENTIALS=credentials.json
-```
-
-### 3. Iniciar servidor
-```bash
-python -m uvicorn validador:app --host 0.0.0.0 --port 8000
-```
-
-O usar el script automático:
-```bash
+# Doble clic en el archivo o ejecutar:
 iniciar_validador.bat
 ```
+**Resultado:** El script hace TODO automáticamente y te da la URL final para Make.com
+
+### Opción 2: Script PowerShell (Más robusto)
+```powershell
+.\iniciar_todo_automatico.ps1
+```
+**Resultado:** Inicio automático con mejor manejo de errores
+
+### Opción 3: Manual (Solo si necesitas control total)
+1. **Instalar dependencias:** `pip install -r requirements.txt`
+2. **Configurar `.env`:** 
+   ```env
+   GOOGLE_DRIVE_FILE_ID=TU_GOOGLE_SHEET_ID
+   GOOGLE_SHEET_RANGE=Hoja1!A:Z
+   GOOGLE_APPLICATION_CREDENTIALS=credentials.json
+   ```
+3. **Iniciar servidor:** `python -m uvicorn validador:app --host 0.0.0.0 --port 8000`
+4. **Iniciar ngrok:** `.\ngrok.exe http 8000`
 
 ## 📍 URLs de Acceso
 
