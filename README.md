@@ -2,31 +2,32 @@
 
 Validador de órdenes de compra que verifica artículos contra un catálogo en Google Sheets.
 
-## ⚡ Inicio Ultra-Rápido (Recomendado)
+## ⚡ Inicio Ultra-Rápido
 
-### Opción 1: Script Automático (Windows)
-```bash
-# Doble clic en el archivo o ejecutar:
-iniciar_validador.bat
-```
-**Resultado:** El script hace TODO automáticamente y te da la URL final para Make.com
-
-### Opción 2: Script PowerShell (Más robusto)
+### 🚀 Un Solo Comando (Recomendado)
 ```powershell
-.\iniciar_todo_automatico.ps1
+.\iniciar_validador.ps1
 ```
-**Resultado:** Inicio automático con mejor manejo de errores
 
-### Opción 3: Manual (Solo si necesitas control total)
-1. **Instalar dependencias:** `pip install -r requirements.txt`
-2. **Configurar `.env`:** 
+**✨ Resultado automático:**
+- ✅ Inicia FastAPI + ngrok automáticamente
+- ✅ Te da la URL final lista para Make.com
+- ✅ Verifica que todo funcione correctamente
+- ✅ Maneja errores automáticamente
+
+### 🔧 Configuración Manual (Solo si es necesario)
+1. **Configurar `.env`:** 
    ```env
    GOOGLE_DRIVE_FILE_ID=TU_GOOGLE_SHEET_ID
    GOOGLE_SHEET_RANGE=Hoja1!A:Z
    GOOGLE_APPLICATION_CREDENTIALS=credentials.json
    ```
-3. **Iniciar servidor:** `python -m uvicorn validador:app --host 0.0.0.0 --port 8000`
-4. **Iniciar ngrok:** `.\ngrok.exe http 8000`
+2. **Instalar dependencias:** `pip install -r requirements.txt`
+3. **Iniciar manualmente:** 
+   ```bash
+   python -m uvicorn validador:app --host 0.0.0.0 --port 8000
+   .\ngrok.exe http 8000
+   ```
 
 ## 📍 URLs de Acceso
 
@@ -98,13 +99,13 @@ python verificar_sistema.py
 ```
 validador-tamaprint/
 ├── validador.py              # Aplicación principal
+├── iniciar_validador.ps1    # Script de inicio automático
+├── verificar_sistema.py     # Verificación del sistema
 ├── requirements.txt          # Dependencias
-├── verificar_sistema.py     # Verificación básica
-├── iniciar_validador.bat    # Script de inicio
 ├── README.md                # Esta documentación
 ├── .env                     # Variables de entorno
 ├── credentials.json         # Credenciales Google
-└── ngrok.exe               # Túnel público (opcional)
+└── ngrok.exe               # Túnel público
 ```
 
 ## 🔧 Solución de Problemas
