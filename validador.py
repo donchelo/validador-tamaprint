@@ -43,8 +43,8 @@ class ValidadorOrdenesCompra:
                 # Modo demo - crear datos de prueba
                 print("Iniciando en modo DEMO - usando datos de prueba")
                 demo_data = {
-                    'Código SN': ['12345', 'ABC123', 'XYZ789'],
-                    'Nº catálogo SN': ['CAT001', 'CAT002', 'CAT003'],
+                    'Código SN': ['CN800069933', 'CN67890', 'CN99999'],
+                    'Nº catálogo SN': ['14003793002', 'CAT002', 'CAT003'],
                     'Descripción': ['Producto Demo 1', 'Producto Demo 2', 'Producto Demo 3'],
                     'Precio': [100.0, 200.0, 300.0]
                 }
@@ -75,25 +75,32 @@ class ValidadorOrdenesCompra:
                 print(f"Catalogo cargado: {len(self.catalogo)} registros")
             
             print("Columnas encontradas:", list(self.catalogo.columns))
-            # Normalizar claves para comparación robusta
+            print("Primeras 3 filas del catalogo:")
+            print(self.catalogo.head(3))
+            # Normalizar claves para comparación robusta - convertir NIT a mayúsculas
             self.catalogo['clave_busqueda'] = (
-                self.catalogo['Código SN'].astype(str).str.strip().str.lower() +
+                self.catalogo['Código SN'].astype(str).str.strip().str.upper() +
                 "|" +
                 self.catalogo['Nº catálogo SN'].astype(str).str.strip().str.lower()
             )
             self.indice_catalogo = self.catalogo.set_index('clave_busqueda')
             print("Indice de busqueda creado")
+            print("Primeras 3 claves de busqueda:")
+            print(list(self.indice_catalogo.index[:3]))
         except Exception as e:
             print(f"Error cargando Google Sheets: {e}")
             raise
     def validar_orden(self, orden_json: Dict[str, Any]):
-        cliente = str(orden_json['comprador']['nit']).strip().lower()
+        print(f"NIT original del JSON: '{orden_json['comprador']['nit']}'")
+        cliente = str(orden_json['comprador']['nit']).strip().upper()  # Convertir a mayúsculas para consistencia
+        print(f"Cliente procesado: '{cliente}'")
         orden_numero = orden_json['orden_compra']
         items = orden_json['items']
         articulos_encontrados = []
         articulos_no_encontrados = []
         for item in items:
             clave_busqueda = f"{cliente}|{str(item['codigo']).strip().lower()}"
+            print(f"Buscando clave: '{clave_busqueda}'")
             try:
                 registro_catalogo = self.indice_catalogo.loc[clave_busqueda]
                 articulo_valido = {
@@ -144,8 +151,9 @@ async def validar_orden_endpoint(orden: OrdenModel):
     try:
         print("Recibida peticion de validacion")
         orden_dict = orden.dict()
+        print(f"JSON completo recibido: {orden_dict}")
         print(f"Orden: {orden_dict.get('orden_compra', 'N/A')}")
-        print(f"Cliente: {orden_dict.get('comprador', {}).get('nit', 'N/A')}")
+        print(f"Cliente NIT raw: '{orden_dict.get('comprador', {}).get('nit', 'N/A')}'")
         print(f"Items: {len(orden_dict.get('items', []))}")
         resultado = validador.validar_orden(orden_dict)
         print(f"Validacion completada: {resultado['resumen']['articulos_encontrados']}/{resultado['resumen']['total_articulos']} articulos validos")
@@ -165,6 +173,13 @@ async def health_check():
         "status": "OK",
         "catalogo_items": len(validador.catalogo),
         "timestamp": datetime.now().isoformat()
+    }
+
+@app.get("/debug-catalogo")
+async def debug_catalogo():
+    return {
+        "primeras_5_filas": validador.catalogo.head(5).to_dict(orient='records'),
+        "claves_busqueda": list(validador.indice_catalogo.index[:5])
     }
 
 # Para desarrollo local con: uvicorn validador:app --reload
