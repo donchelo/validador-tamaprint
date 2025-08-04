@@ -39,28 +39,41 @@ class OrdenModel(BaseModel):
 class ValidadorOrdenesCompra:
     def __init__(self):
         try:
-            scopes = [
-                'https://www.googleapis.com/auth/spreadsheets',
-                'https://www.googleapis.com/auth/drive'
-            ]
-            credentials = Credentials.from_service_account_file(
-                GOOGLE_APPLICATION_CREDENTIALS,
-                scopes=scopes
-            )
-            gc = gspread.authorize(credentials)
-            sh = gc.open_by_key(GOOGLE_DRIVE_FILE_ID)
-            # Separar nombre de hoja y rango
-            if '!' in GOOGLE_SHEET_RANGE:
-                sheet_name, sheet_range = GOOGLE_SHEET_RANGE.split('!')
+            if not GOOGLE_DRIVE_FILE_ID or GOOGLE_DRIVE_FILE_ID == "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms":
+                # Modo demo - crear datos de prueba
+                print("Iniciando en modo DEMO - usando datos de prueba")
+                demo_data = {
+                    'Código SN': ['12345', 'ABC123', 'XYZ789'],
+                    'Nº catálogo SN': ['CAT001', 'CAT002', 'CAT003'],
+                    'Descripción': ['Producto Demo 1', 'Producto Demo 2', 'Producto Demo 3'],
+                    'Precio': [100.0, 200.0, 300.0]
+                }
+                self.catalogo = pd.DataFrame(demo_data)
+                print(f"Catalogo demo cargado: {len(self.catalogo)} registros")
             else:
-                sheet_name = 'Hoja1'
-                sheet_range = GOOGLE_SHEET_RANGE
-            worksheet = sh.worksheet(sheet_name)
-            data = worksheet.get(sheet_range)
-            headers = data[0]
-            rows = data[1:]
-            self.catalogo = pd.DataFrame(rows, columns=headers)
-            print(f"✅ Catálogo cargado: {len(self.catalogo)} registros")
+                scopes = [
+                    'https://www.googleapis.com/auth/spreadsheets',
+                    'https://www.googleapis.com/auth/drive'
+                ]
+                credentials = Credentials.from_service_account_file(
+                    GOOGLE_APPLICATION_CREDENTIALS,
+                    scopes=scopes
+                )
+                gc = gspread.authorize(credentials)
+                sh = gc.open_by_key(GOOGLE_DRIVE_FILE_ID)
+                # Separar nombre de hoja y rango
+                if '!' in GOOGLE_SHEET_RANGE:
+                    sheet_name, sheet_range = GOOGLE_SHEET_RANGE.split('!')
+                else:
+                    sheet_name = 'Hoja1'
+                    sheet_range = GOOGLE_SHEET_RANGE
+                worksheet = sh.worksheet(sheet_name)
+                data = worksheet.get(sheet_range)
+                headers = data[0]
+                rows = data[1:]
+                self.catalogo = pd.DataFrame(rows, columns=headers)
+                print(f"Catalogo cargado: {len(self.catalogo)} registros")
+            
             print("Columnas encontradas:", list(self.catalogo.columns))
             # Normalizar claves para comparación robusta
             self.catalogo['clave_busqueda'] = (
@@ -69,9 +82,9 @@ class ValidadorOrdenesCompra:
                 self.catalogo['Nº catálogo SN'].astype(str).str.strip().str.lower()
             )
             self.indice_catalogo = self.catalogo.set_index('clave_busqueda')
-            print("✅ Índice de búsqueda creado")
+            print("Indice de busqueda creado")
         except Exception as e:
-            print(f"❌ Error cargando Google Sheets: {e}")
+            print(f"Error cargando Google Sheets: {e}")
             raise
     def validar_orden(self, orden_json: Dict[str, Any]):
         cliente = str(orden_json['comprador']['nit']).strip().lower()
@@ -116,34 +129,34 @@ class ValidadorOrdenesCompra:
             "articulos_listos_para_sap": articulos_encontrados if todos_existen else [],
             "articulos_que_NO_existen": articulos_no_encontrados,
             "mensaje": (
-                f"✅ VALIDACIÓN EXITOSA: Todos los {len(items)} artículos existen en el catálogo. La orden puede procesarse en SAP."
+                f"VALIDACION EXITOSA: Todos los {len(items)} articulos existen en el catalogo. La orden puede procesarse en SAP."
                 if todos_existen else 
-                f"❌ VALIDACIÓN FALLIDA: {len(articulos_no_encontrados)} de {len(items)} artículos NO existen en el catálogo. Revisar artículos faltantes antes de procesar en SAP."
+                f"VALIDACION FALLIDA: {len(articulos_no_encontrados)} de {len(items)} articulos NO existen en el catalogo. Revisar articulos faltantes antes de procesar en SAP."
             )
         }
         return resultado
 
-print("🚀 Iniciando validador...")
+print("Iniciando validador...")
 validador = ValidadorOrdenesCompra()
 
 @app.post("/validar-orden")
 async def validar_orden_endpoint(orden: OrdenModel):
     try:
-        print("📥 Recibida petición de validación")
+        print("Recibida peticion de validacion")
         orden_dict = orden.dict()
-        print(f"📋 Orden: {orden_dict.get('orden_compra', 'N/A')}")
-        print(f"👤 Cliente: {orden_dict.get('comprador', {}).get('nit', 'N/A')}")
-        print(f"📦 Items: {len(orden_dict.get('items', []))}")
+        print(f"Orden: {orden_dict.get('orden_compra', 'N/A')}")
+        print(f"Cliente: {orden_dict.get('comprador', {}).get('nit', 'N/A')}")
+        print(f"Items: {len(orden_dict.get('items', []))}")
         resultado = validador.validar_orden(orden_dict)
-        print(f"✅ Validación completada: {resultado['resumen']['articulos_encontrados']}/{resultado['resumen']['total_articulos']} artículos válidos")
+        print(f"Validacion completada: {resultado['resumen']['articulos_encontrados']}/{resultado['resumen']['total_articulos']} articulos validos")
         return JSONResponse(content=resultado, status_code=200)
     except Exception as e:
-        print(f"❌ Error en validación: {e}")
+        print(f"Error en validacion: {e}")
         return JSONResponse(content={
             "TODOS_LOS_ARTICULOS_EXISTEN": False,
             "PUEDE_PROCESAR_EN_SAP": False,
             "error": str(e),
-            "mensaje": f"❌ ERROR EN VALIDACIÓN: {str(e)}"
+            "mensaje": f"ERROR EN VALIDACION: {str(e)}"
         }, status_code=500)
 
 @app.get("/health")
