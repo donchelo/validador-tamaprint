@@ -27,8 +27,8 @@ def check_files():
     """Verificar archivos esenciales"""
     print("\n[CHECK] Verificando archivos...")
     
-    required_files = ["validador.py", "requirements.txt"]
-    optional_files = [".env", "credentials.json", "ngrok.exe"]
+    required_files = ["src/validador.py", "requirements.txt"]
+    optional_files = [".env", "credentials.json", "config/ngrok.exe"]
     
     all_ok = True
     
@@ -88,7 +88,7 @@ def main():
     print("\n" + "=" * 50)
     if all(checks):
         print("✅ SISTEMA LISTO!")
-        print("   Ejecuta: python -m uvicorn validador:app --host 0.0.0.0 --port 8000")
+        print("   Ejecuta: python -m uvicorn src.validador:app --host 0.0.0.0 --port 8000")
     else:
         print("❌ PROBLEMAS DETECTADOS:")
         print("   - Instala dependencias: pip install -r requirements.txt")

@@ -47,7 +47,7 @@ if ($all_exist.Count -eq 0) {
 
 # Test 5: Verificar archivos criticos
 Write-Host "[5] Verificando archivos criticos..." -ForegroundColor Yellow -NoNewline
-$critical_files = @("validador.py", "requirements.txt")
+$critical_files = @("src\validador.py", "requirements.txt")
 $missing = $critical_files | Where-Object { -not (Test-Path $_) }
 if ($missing.Count -eq 0) {
     Write-Host " [OK]" -ForegroundColor Green

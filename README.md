@@ -1,47 +1,60 @@
-# 🚀 Validador Tamaprint - Ultra Simplificado
+# 🚀 Validador TamaPrint - Ultra Simplificado
 
 Validador de órdenes de compra que verifica artículos contra un catálogo en Google Sheets.
 
+## 📁 Estructura del Proyecto
+
+```
+validador-tamaprint/
+├── src/                    # Código fuente principal
+│   ├── __init__.py
+│   ├── validador.py       # Aplicación FastAPI principal
+│   └── verificar_sistema.py
+├── scripts/               # Scripts de PowerShell
+│   ├── __init__.py
+│   ├── iniciar.ps1        # Script principal unificado
+│   ├── test_simple.ps1
+│   └── test_rapido.ps1
+├── tests/                 # Pruebas automatizadas
+│   ├── __init__.py
+│   ├── test_validador.py
+│   ├── test_iniciador_unificado.py
+│   ├── ejecutar_tests.py
+│   └── probar_mejoras.py
+├── config/                # Configuración y archivos externos
+│   ├── __init__.py
+│   ├── config.py          # Configuración centralizada
+│   └── ngrok.exe
+├── logs/                  # Archivos de log
+│   ├── __init__.py
+│   └── validador.log
+├── docs/                  # Documentación
+│   ├── __init__.py
+│   ├── README.md
+│   ├── INSTRUCCIONES_RAPIDAS.md
+│   ├── MEJORAS_V2.1.md
+│   └── UNIFICACION_V3.0.md
+├── run.py                 # Script de inicio Python
+├── requirements.txt       # Dependencias
+└── .gitignore
+```
+
 ## ⚡ Inicio Ultra-Rápido
 
-### 🚀 Un Solo Comando (Recomendado)
+### 🚀 Opción 1: Script PowerShell (Recomendado)
 ```powershell
-.\iniciar_validador.ps1
+.\scripts\iniciar.ps1
 ```
 
-**✨ Resultado automático:**
-- ✅ Inicia FastAPI + ngrok automáticamente
-- ✅ Te da la URL final lista para Make.com
-- ✅ Verifica que todo funcione correctamente
-- ✅ Maneja errores automáticamente
-- ✅ Activa entorno virtual automáticamente
-- ✅ Detecta puertos disponibles inteligentemente
-- ✅ Mejor manejo de procesos y limpieza
-
-### 🔧 Script de Respaldo (Si el principal falla)
-```powershell
-.\iniciar_manual.ps1
+### 🐍 Opción 2: Script Python
+```bash
+python run.py
 ```
 
-**🛡️ Versión de emergencia:**
-- ✅ Inicio paso a paso más detallado
-- ✅ Usa PowerShell Jobs para mejor control
-- ✅ Más tiempo de espera para servicios
-- ✅ Mejor diagnóstico de errores
-
-### 🔧 Configuración Manual (Solo si es necesario)
-1. **Configurar `.env`:** 
-   ```env
-   GOOGLE_DRIVE_FILE_ID=TU_GOOGLE_SHEET_ID
-   GOOGLE_SHEET_RANGE=Hoja1!A:Z
-   GOOGLE_APPLICATION_CREDENTIALS=credentials.json
-   ```
-2. **Instalar dependencias:** `pip install -r requirements.txt`
-3. **Iniciar manualmente:** 
-   ```bash
-   python -m uvicorn validador:app --host 0.0.0.0 --port 8000
-   .\ngrok.exe http 8000
-   ```
+### 🔧 Opción 3: Manual
+```bash
+python -m uvicorn src.validador:app --host 0.0.0.0 --port 8000
+```
 
 ## 📍 URLs de Acceso
 
@@ -100,84 +113,108 @@ POST http://localhost:8000/validar-orden
 GET http://localhost:8000/health
 ```
 
-### Debug Catálogo
-```bash
-GET http://localhost:8000/debug-catalogo
+## 🛠️ Configuración
+
+### 1. Variables de Entorno
+Crear archivo `.env` en la raíz del proyecto:
+```env
+GOOGLE_DRIVE_FILE_ID=TU_GOOGLE_SHEET_ID
+GOOGLE_SHEET_RANGE=Hoja1!A:Z
+GOOGLE_APPLICATION_CREDENTIALS=credentials.json
 ```
 
-### Cache Management
-```bash
-# Ver estadísticas del cache
-GET http://localhost:8000/cache/stats
+### 2. Credenciales de Google
+- Descargar `credentials.json` desde Google Cloud Console
+- Colocar en la raíz del proyecto
 
-# Limpiar cache
-POST http://localhost:8000/cache/clear
-```
+### 3. Ngrok (Opcional)
+- Descargar `ngrok.exe` desde https://ngrok.com/download
+- Colocar en `config/ngrok.exe`
 
-## 🌐 Acceso Público (Opcional)
-
-Para exponer la API públicamente:
-```bash
-ngrok.exe http 8000
-```
-
-## 🛠 Verificación del Sistema
+## 🧪 Ejecutar Pruebas
 
 ```bash
-python verificar_sistema.py
+# Ejecutar todas las pruebas
+python -m pytest tests/
+
+# Ejecutar pruebas específicas
+python -m pytest tests/test_validador.py -v
+
+# Ejecutar con cobertura
+python -m pytest tests/ --cov=src --cov-report=html
 ```
 
-## 🧪 Tests Unitarios
+## 📚 Documentación
 
+- **Instrucciones Rápidas**: `docs/INSTRUCCIONES_RAPIDAS.md`
+- **Mejoras V2.1**: `docs/MEJORAS_V2.1.md`
+- **Unificación V3.0**: `docs/UNIFICACION_V3.0.md`
+
+## 🔧 Desarrollo
+
+### Estructura de Código
+- **`src/validador.py`**: Aplicación FastAPI principal
+- **`config/config.py`**: Configuración centralizada
+- **`tests/`**: Pruebas unitarias y de integración
+
+### Agregar Nuevas Funcionalidades
+1. Crear módulo en `src/`
+2. Agregar pruebas en `tests/`
+3. Actualizar documentación en `docs/`
+4. Actualizar `config/config.py` si es necesario
+
+## 🚀 Despliegue
+
+### Local
 ```bash
-# Ejecutar tests
-python ejecutar_tests.py
-
-# O directamente con pytest
-pytest test_validador.py -v
+python run.py --host 127.0.0.1 --port 8000
 ```
 
-## 📁 Estructura del Proyecto
-
-```
-validador-tamaprint/
-├── validador.py              # Aplicación principal
-├── test_validador.py         # Tests unitarios
-├── ejecutar_tests.py         # Script para ejecutar tests
-├── iniciar_validador.ps1    # Script de inicio automático
-├── verificar_sistema.py     # Verificación del sistema
-├── requirements.txt          # Dependencias
-├── README.md                # Esta documentación
-├── .env                     # Variables de entorno
-├── credentials.json         # Credenciales Google
-├── ngrok.exe               # Túnel público
-└── validador.log           # Logs de la aplicación
-```
-
-## 🔧 Solución de Problemas
-
-### Error: "Puerto en uso"
+### Producción
 ```bash
-python -m uvicorn validador:app --host 0.0.0.0 --port 8080
+python run.py --host 0.0.0.0 --port 8000
 ```
 
-### Error: "Google Sheets no encontrado"
-- Verificar que `credentials.json` existe
-- Verificar que el Google Sheet ID es correcto
-- Verificar que el Service Account tiene acceso
-
-### Error: "Dependencias faltantes"
-```bash
-pip install -r requirements.txt
+### Con Ngrok (Acceso Público)
+```powershell
+.\scripts\iniciar.ps1
 ```
 
-## 📊 Monitoreo
+## 📝 Logs
 
-- **Health Check:** `GET /health`
-- **Debug Catálogo:** `GET /debug-catalogo`
-- **Logs:** Revisar terminal donde se ejecuta el servidor
+Los logs se guardan en `logs/validador.log` con el siguiente formato:
+```
+2024-01-15 10:30:00 | INFO | validador | Servidor iniciado en puerto 8000
+2024-01-15 10:30:05 | INFO | validador | Validación exitosa para orden OC-2024-001
+```
 
----
+## 🛑 Para Detener
 
-**Versión:** Ultra Simplificada  
-**Desarrollado con:** FastAPI + Google Sheets
+1. **Servidor FastAPI:** `Ctrl+C` en la terminal del servidor
+2. **Ngrok:** `Ctrl+C` en la terminal de ngrok
+3. **Modo automático:** Cerrar la ventana de PowerShell
+
+## 📞 Soporte
+
+Si tienes problemas:
+1. Ejecuta: `.\scripts\iniciar.ps1 -VerificarSolo`
+2. Revisa los logs en `logs/validador.log`
+3. Verifica la documentación en `docs/`
+4. Asegúrate de que todos los archivos estén en su lugar
+
+## 🔄 Migración desde Versiones Anteriores
+
+### Cambios en V3.0
+- ✅ Estructura de directorios organizada
+- ✅ Configuración centralizada
+- ✅ Scripts unificados
+- ✅ Mejor manejo de rutas
+- ✅ Documentación actualizada
+
+### Archivos Movidos
+- `validador.py` → `src/validador.py`
+- `*.ps1` → `scripts/`
+- `test_*.py` → `tests/`
+- `*.md` → `docs/`
+- `ngrok.exe` → `config/`
+- `validador.log` → `logs/`

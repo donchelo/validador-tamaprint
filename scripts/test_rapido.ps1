@@ -73,7 +73,7 @@ Test-Step "Verificar documentación" {
 
 # Test 6: Verificar archivos críticos
 Test-Step "Verificar archivos críticos" {
-    $critical_files = @("validador.py", "requirements.txt")
+    $critical_files = @("src\validador.py", "requirements.txt")
     $missing = $critical_files | Where-Object { -not (Test-Path $_) }
     return $missing.Count -eq 0
 }

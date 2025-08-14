@@ -64,8 +64,8 @@ function Write-URL {
 function Test-CriticalFiles {
     Write-Step 1 6 "Verificando archivos criticos..."
     
-    $criticalFiles = @("validador.py", "requirements.txt")
-    $optionalFiles = @("ngrok.exe", ".env", "credentials.json")
+    $criticalFiles = @("src\validador.py", "requirements.txt")
+    $optionalFiles = @("config\ngrok.exe", ".env", "credentials.json")
     $missingFiles = @()
     
     foreach ($file in $criticalFiles) {
@@ -89,8 +89,8 @@ function Test-CriticalFiles {
         throw "ERROR: Faltan archivos criticos: $($missingFiles -join ', ')"
     }
     
-    if ($NoNgrok -and -not (Test-Path "ngrok.exe")) {
-        Write-Warning "Modo sin ngrok seleccionado - ngrok.exe no es necesario"
+    if ($NoNgrok -and -not (Test-Path "config\ngrok.exe")) {
+        Write-Warning "Modo sin ngrok seleccionado - config\ngrok.exe no es necesario"
     }
 }
 
@@ -189,13 +189,13 @@ function Start-FastAPI {
     
     if ($Modo -eq "batch") {
         Write-Host "    Modo batch: iniciando en primer plano..." -ForegroundColor $Colors.Info
-        Write-Host "    Ejecutando: python -m uvicorn validador:app --host 0.0.0.0 --port $Port" -ForegroundColor $Colors.Info
-        python -m uvicorn validador:app --host 0.0.0.0 --port $Port
+            Write-Host "    Ejecutando: python -m uvicorn src.validador:app --host 0.0.0.0 --port $Port" -ForegroundColor $Colors.Info
+    python -m uvicorn src.validador:app --host 0.0.0.0 --port $Port
         return
     }
     
     # Modo automatico o manual
-    $fastApiProcess = Start-Process -FilePath "python" -ArgumentList "-m", "uvicorn", "validador:app", "--host", "0.0.0.0", "--port", "$Port" -WindowStyle Hidden -PassThru
+    $fastApiProcess = Start-Process -FilePath "python" -ArgumentList "-m", "uvicorn", "src.validador:app", "--host", "0.0.0.0", "--port", "$Port" -WindowStyle Hidden -PassThru
     
     Write-Host "    Esperando que el servidor se inicie (15 segundos)..." -ForegroundColor $Colors.Info
     Start-Sleep -Seconds 15
@@ -240,11 +240,11 @@ function Start-Ngrok {
     
     Write-Step 5 6 "Iniciando ngrok..."
     
-    if (-not (Test-Path "ngrok.exe")) {
-        throw "ERROR: ngrok.exe no encontrado. Descarga desde https://ngrok.com/download"
+    if (-not (Test-Path "config\ngrok.exe")) {
+        throw "ERROR: config\ngrok.exe no encontrado. Descarga desde https://ngrok.com/download"
     }
     
-    $ngrokProcess = Start-Process -FilePath ".\ngrok.exe" -ArgumentList "http", "$Port" -WindowStyle Hidden -PassThru
+    $ngrokProcess = Start-Process -FilePath ".\config\ngrok.exe" -ArgumentList "http", "$Port" -WindowStyle Hidden -PassThru
     
     Write-Host "    Esperando conexion de ngrok (15 segundos)..." -ForegroundColor $Colors.Info
     Start-Sleep -Seconds 15
@@ -460,7 +460,7 @@ function Main {
         Write-Host "Soluciones posibles:" -ForegroundColor $Colors.Warning
         Write-Host "    • Verifica que Python este instalado" -ForegroundColor $Colors.Info
         Write-Host "    • Ejecuta: pip install -r requirements.txt" -ForegroundColor $Colors.Info
-        Write-Host "    • Verifica que ngrok.exe este en la carpeta" -ForegroundColor $Colors.Info
+        Write-Host "    • Verifica que config\ngrok.exe este en la carpeta" -ForegroundColor $Colors.Info
         Write-Host "    • Cierra otras instancias del validador" -ForegroundColor $Colors.Info
         Write-Host "    • Usa: .\iniciar.ps1 -VerificarSolo" -ForegroundColor $Colors.Info
         Write-Host ""

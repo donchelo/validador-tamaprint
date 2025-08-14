@@ -12,7 +12,7 @@ import os
 # Agregar el directorio actual al path para importar el módulo
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from validador import (
+from src.validador import (
     ItemModel, 
     CompradorModel, 
     OrdenModel, 
@@ -250,10 +250,10 @@ class TestValidadorOrdenesCompra:
 class TestEndpoints:
     """Tests para los endpoints de FastAPI"""
     
-    @patch('validador.validador')
+    @patch('src.validador.validador')
     def test_health_check(self, mock_validador):
         """Test: Health check endpoint"""
-        from validador import app
+        from src.validador import app
         from fastapi.testclient import TestClient
         
         # Mock del validador
@@ -268,10 +268,10 @@ class TestEndpoints:
         assert "catalogo_items" in data
         assert "timestamp" in data
     
-    @patch('validador.validador')
+    @patch('src.validador.validador')
     def test_debug_catalogo(self, mock_validador):
         """Test: Debug catálogo endpoint"""
-        from validador import app
+        from src.validador import app
         from fastapi.testclient import TestClient
         
         # Mock del validador
