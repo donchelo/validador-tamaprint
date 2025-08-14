@@ -39,21 +39,21 @@ class CacheManager:
         self.max_size = max_size
         self.ttl_seconds = ttl_seconds
         self.access_times = {}
-        logger.info(f"🔧 Cache inicializado: max_size={max_size}, ttl={ttl_seconds}s")
+        logger.info(f"[CACHE] Inicializado: max_size={max_size}, ttl={ttl_seconds}s")
     
     def get(self, key):
         """Obtener valor del cache"""
         if key in self.cache:
             # Verificar TTL
             if time.time() - self.access_times[key] > self.ttl_seconds:
-                logger.debug(f"⏰ Cache expirado para: {key}")
+                logger.debug(f"[CACHE] Expirado para: {key}")
                 del self.cache[key]
                 del self.access_times[key]
                 return None
             
             # Actualizar tiempo de acceso
             self.access_times[key] = time.time()
-            logger.debug(f"✅ Cache hit para: {key}")
+            logger.debug(f"[CACHE] Hit para: {key}")
             return self.cache[key]
         
         logger.debug(f"❌ Cache miss para: {key}")
@@ -154,26 +154,26 @@ class OrdenModel(BaseModel):
 
 class ValidadorOrdenesCompra:
     def __init__(self):
-        logger.info("🚀 Iniciando ValidadorOrdenesCompra...")
+        logger.info("[INIT] Iniciando ValidadorOrdenesCompra...")
         try:
             # Validar variables de entorno
-            logger.info("📋 Validando variables de entorno...")
+            logger.info("[SETUP] Validando variables de entorno...")
             if not GOOGLE_DRIVE_FILE_ID:
                 raise ValueError("GOOGLE_DRIVE_FILE_ID no está configurado en .env")
             if not GOOGLE_SHEET_RANGE:
                 raise ValueError("GOOGLE_SHEET_RANGE no está configurado en .env")
             if not GOOGLE_APPLICATION_CREDENTIALS:
                 raise ValueError("GOOGLE_APPLICATION_CREDENTIALS no está configurado en .env")
-            logger.info("✅ Variables de entorno validadas")
+            logger.info("[SETUP] Variables de entorno validadas")
             
             # Verificar archivo de credenciales
-            logger.info(f"🔐 Verificando credenciales: {GOOGLE_APPLICATION_CREDENTIALS}")
+            logger.info(f"[AUTH] Verificando credenciales: {GOOGLE_APPLICATION_CREDENTIALS}")
             if not os.path.exists(GOOGLE_APPLICATION_CREDENTIALS):
                 raise FileNotFoundError(f"Archivo de credenciales no encontrado: {GOOGLE_APPLICATION_CREDENTIALS}")
-            logger.info("✅ Archivo de credenciales encontrado")
+            logger.info("[AUTH] Archivo de credenciales encontrado")
             
             # Configurar Google Sheets
-            logger.info("🔗 Conectando con Google Sheets...")
+            logger.info("[GSHEETS] Conectando con Google Sheets...")
             scopes = [
                 'https://www.googleapis.com/auth/spreadsheets',
                 'https://www.googleapis.com/auth/drive'
@@ -184,10 +184,10 @@ class ValidadorOrdenesCompra:
             )
             gc = gspread.authorize(credentials)
             sh = gc.open_by_key(GOOGLE_DRIVE_FILE_ID)
-            logger.info("✅ Conexión con Google Sheets establecida")
+            logger.info("[GSHEETS] Conexión establecida")
             
             # Obtener datos de la hoja
-            logger.info(f"📊 Cargando datos del rango: {GOOGLE_SHEET_RANGE}")
+            logger.info(f"[DATA] Cargando datos del rango: {GOOGLE_SHEET_RANGE}")
             if '!' in GOOGLE_SHEET_RANGE:
                 sheet_name, sheet_range = GOOGLE_SHEET_RANGE.split('!')
             else:
@@ -203,40 +203,40 @@ class ValidadorOrdenesCompra:
             headers = data[0]
             rows = data[1:]
             self.catalogo = pd.DataFrame(rows, columns=headers)
-            logger.info(f"📋 Datos cargados: {len(rows)} filas, {len(headers)} columnas")
+            logger.info(f"[DATA] Datos cargados: {len(rows)} filas, {len(headers)} columnas")
             
             # Verificar columnas requeridas
-            logger.info("🔍 Verificando columnas requeridas...")
+            logger.info("[VALIDATE] Verificando columnas requeridas...")
             required_columns = ['Código SN', 'Nº catálogo SN']
             missing_columns = [col for col in required_columns if col not in self.catalogo.columns]
             if missing_columns:
                 raise ValueError(f"Columnas faltantes en el catálogo: {missing_columns}")
-            logger.info("✅ Columnas requeridas verificadas")
+            logger.info("[VALIDATE] Columnas requeridas verificadas")
             
             # Crear índice de búsqueda
-            logger.info("🔍 Creando índice de búsqueda...")
+            logger.info("[INDEX] Creando índice de búsqueda...")
             self.catalogo['clave_busqueda'] = (
                 self.catalogo['Código SN'].astype(str).str.strip().str.upper() +
                 "|" +
                 self.catalogo['Nº catálogo SN'].astype(str).str.strip().str.lower()
             )
             self.indice_catalogo = self.catalogo.set_index('clave_busqueda')
-            logger.info(f"✅ Índice creado con {len(self.indice_catalogo)} claves únicas")
+            logger.info(f"[INDEX] Índice creado con {len(self.indice_catalogo)} claves únicas")
             
-            logger.info(f"✅ Catálogo cargado exitosamente: {len(self.catalogo)} registros")
+            logger.info(f"[CATALOG] Catálogo cargado exitosamente: {len(self.catalogo)} registros")
             
         except Exception as e:
             logger.error(f"❌ Error inicializando validador: {e}")
             raise
 
     def validar_orden(self, orden_json: Dict[str, Any]):
-        logger.info("🔍 Iniciando validación de orden...")
+        logger.info("[VALIDATE] Iniciando validación de orden...")
         try:
             cliente = str(orden_json['comprador']['nit']).strip().upper()
             orden_numero = orden_json['orden_compra']
             items = orden_json['items']
             
-            logger.info(f"📋 Validando orden {orden_numero} para cliente {cliente} con {len(items)} artículos")
+            logger.info(f"[ORDER] Validando orden {orden_numero} para cliente {cliente} con {len(items)} artículos")
             
             if not items:
                 logger.warning("⚠️ Orden sin artículos")
@@ -249,7 +249,7 @@ class ValidadorOrdenesCompra:
                 codigo = str(item['codigo']).strip()
                 clave_busqueda = f"{cliente}|{codigo.lower()}"
                 
-                logger.debug(f"🔍 Buscando artículo {i}/{len(items)}: {codigo} para cliente {cliente}")
+                logger.debug(f"[SEARCH] Buscando artículo {i}/{len(items)}: {codigo} para cliente {cliente}")
                 
                 # Intentar obtener del cache primero
                 cache_key = f"validacion_{clave_busqueda}"
@@ -289,7 +289,7 @@ class ValidadorOrdenesCompra:
                         "fecha_entrega": item['fecha_entrega']
                     }
                     articulos_encontrados.append(articulo_valido)
-                    logger.debug(f"✅ Artículo encontrado: {codigo}")
+                    logger.debug(f"[FOUND] Artículo encontrado: {codigo}")
                     
                     # Guardar en cache
                     cache_manager.set(cache_key, {
@@ -336,7 +336,7 @@ class ValidadorOrdenesCompra:
                 )
             }
             
-            logger.info(f"✅ Validación completada: {len(articulos_encontrados)}/{len(items)} artículos encontrados")
+            logger.info(f"[RESULT] Validación completada: {len(articulos_encontrados)}/{len(items)} artículos encontrados")
             if todos_existen:
                 logger.info("🎉 TODOS los artículos existen - Orden lista para SAP")
             else:
@@ -348,10 +348,10 @@ class ValidadorOrdenesCompra:
             raise ValueError(f"Error validando orden: {str(e)}")
 
 # Inicializar validador
-logger.info("🚀 Iniciando Validador Tamaprint...")
+logger.info("[STARTUP] Iniciando Validador Tamaprint...")
 try:
     validador = ValidadorOrdenesCompra()
-    logger.info("✅ Validador inicializado correctamente")
+    logger.info("[READY] Validador inicializado correctamente")
 except Exception as e:
     logger.error(f"❌ Error crítico: {e}")
     logger.error("💡 Verifica la configuración en .env y el archivo credentials.json")
@@ -362,7 +362,7 @@ async def validar_orden_endpoint(orden: OrdenModel):
     logger.info(f"📥 Nueva solicitud de validación recibida")
     try:
         resultado = validador.validar_orden(orden.dict())
-        logger.info(f"✅ Validación exitosa para orden: {resultado['orden_compra']}")
+        logger.info(f"[SUCCESS] Validación exitosa para orden: {resultado['orden_compra']}")
         return JSONResponse(content=resultado, status_code=200)
     except ValueError as e:
         logger.warning(f"⚠️ Error de validación: {str(e)}")
@@ -383,14 +383,14 @@ async def validar_orden_endpoint(orden: OrdenModel):
 
 @app.get("/health")
 async def health_check():
-    logger.debug("🔍 Health check solicitado")
+    logger.debug("[HEALTH] Health check solicitado")
     try:
         response = {
             "status": "OK",
             "catalogo_items": len(validador.catalogo),
             "timestamp": datetime.now().isoformat()
         }
-        logger.debug(f"✅ Health check exitoso: {response['catalogo_items']} items en catálogo")
+        logger.debug(f"[HEALTH] Check exitoso: {response['catalogo_items']} items en catálogo")
         return response
     except Exception as e:
         logger.error(f"❌ Error en health check: {str(e)}")
@@ -401,13 +401,13 @@ async def health_check():
 
 @app.get("/debug-catalogo")
 async def debug_catalogo():
-    logger.debug("🔍 Debug catálogo solicitado")
+    logger.debug("[DEBUG] Debug catálogo solicitado")
     try:
         response = {
             "primeras_5_filas": validador.catalogo.head(5).to_dict(orient='records'),
             "claves_busqueda": list(validador.indice_catalogo.index[:5])
         }
-        logger.debug(f"✅ Debug catálogo exitoso: {len(response['primeras_5_filas'])} filas mostradas")
+        logger.debug(f"[DEBUG] Catálogo exitoso: {len(response['primeras_5_filas'])} filas mostradas")
         return response
     except Exception as e:
         logger.error(f"❌ Error en debug catálogo: {str(e)}")
@@ -418,10 +418,10 @@ async def debug_catalogo():
 @app.get("/cache/stats")
 async def cache_stats():
     """Obtener estadísticas del cache"""
-    logger.debug("📊 Estadísticas de cache solicitadas")
+    logger.debug("[STATS] Estadísticas de cache solicitadas")
     try:
         stats = cache_manager.stats()
-        logger.debug(f"✅ Stats de cache: {stats['size']} items, hit_rate={stats['hit_rate']:.2f}")
+        logger.debug(f"[STATS] Cache: {stats['size']} items, hit_rate={stats['hit_rate']:.2f}")
         return stats
     except Exception as e:
         logger.error(f"❌ Error obteniendo stats de cache: {str(e)}")

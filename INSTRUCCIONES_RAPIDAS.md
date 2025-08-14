@@ -1,23 +1,20 @@
-# 🚀 Instrucciones Rápidas - Validador TamaPrint
+# Instrucciones Rapidas - Validador TamaPrint
 
-## ⚡ Inicio Rápido (Recomendado)
+## Inicio Rapido (Recomendado)
 
-### Opción 1: Script Automático (Más Fácil)
+### Opcion 1: Script Simple (MAS FACIL)
 ```powershell
-# Ejecutar el script PowerShell
-.\iniciar_todo.ps1
+# Ejecutar el nuevo script simple
+.\iniciar_simple.ps1
 ```
 
-### Opción 2: Scripts Separados
-```powershell
-# Terminal 1: Iniciar servidor FastAPI
-.\iniciar_servidor.bat
-
-# Terminal 2: Iniciar ngrok (opcional)
-.\iniciar_ngrok.bat
+### Opcion 2: Archivo Batch (Sin Unicode)
+```cmd
+# Doble click en el archivo o ejecutar:
+iniciar.bat
 ```
 
-### Opción 3: Comandos Manuales
+### Opcion 3: Comandos Manuales
 ```powershell
 # 1. Activar entorno virtual
 .\.venv\Scripts\Activate.ps1

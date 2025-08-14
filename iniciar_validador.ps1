@@ -189,7 +189,7 @@ try {
     Show-Progress "Iniciando ngrok y obteniendo URL..." 6 6
     $ngrokProcess = Start-Process -FilePath ".\ngrok.exe" -ArgumentList "http", "$availablePort" -WindowStyle Hidden -PassThru
     
-    Write-Host "    Esperando conexión de ngrok (15 segundos)..." -ForegroundColor Cyan
+    Write-Host "    Esperando conexion de ngrok (15 segundos)..." -ForegroundColor Cyan
     Start-Sleep -Seconds 15
     
     # Obtener URL pública con reintentos (MEJORADO)
