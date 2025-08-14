@@ -14,6 +14,20 @@ Validador de órdenes de compra que verifica artículos contra un catálogo en G
 - ✅ Te da la URL final lista para Make.com
 - ✅ Verifica que todo funcione correctamente
 - ✅ Maneja errores automáticamente
+- ✅ Activa entorno virtual automáticamente
+- ✅ Detecta puertos disponibles inteligentemente
+- ✅ Mejor manejo de procesos y limpieza
+
+### 🔧 Script de Respaldo (Si el principal falla)
+```powershell
+.\iniciar_manual.ps1
+```
+
+**🛡️ Versión de emergencia:**
+- ✅ Inicio paso a paso más detallado
+- ✅ Usa PowerShell Jobs para mejor control
+- ✅ Más tiempo de espera para servicios
+- ✅ Mejor diagnóstico de errores
 
 ### 🔧 Configuración Manual (Solo si es necesario)
 1. **Configurar `.env`:** 
