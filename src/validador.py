@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, validator
@@ -14,6 +15,12 @@ import sys
 from functools import lru_cache
 from datetime import datetime, timedelta
 import time
+
+# Configurar encoding UTF-8 para Windows
+if sys.platform.startswith('win'):
+    import codecs
+    sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
+    sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'strict')
 
 # Configuración de logging estructurado
 def setup_logging():
@@ -56,7 +63,7 @@ class CacheManager:
             logger.debug(f"[CACHE] Hit para: {key}")
             return self.cache[key]
         
-        logger.debug(f"❌ Cache miss para: {key}")
+        logger.debug(f"Cache miss para: {key}")
         return None
     
     def set(self, key, value):
@@ -67,7 +74,7 @@ class CacheManager:
         
         self.cache[key] = value
         self.access_times[key] = time.time()
-        logger.debug(f"💾 Cache set para: {key}")
+        logger.debug(f"Cache set para: {key}")
     
     def _cleanup_oldest(self):
         """Limpiar entradas más antiguas del cache"""
@@ -77,7 +84,7 @@ class CacheManager:
         oldest_key = min(self.access_times.keys(), key=lambda k: self.access_times[k])
         del self.cache[oldest_key]
         del self.access_times[oldest_key]
-        logger.debug(f"🗑️ Cache cleanup: eliminado {oldest_key}")
+        logger.debug(f"Cache cleanup: eliminado {oldest_key}")
     
     def clear(self):
         """Limpiar todo el cache"""
@@ -226,7 +233,7 @@ class ValidadorOrdenesCompra:
             logger.info(f"[CATALOG] Catálogo cargado exitosamente: {len(self.catalogo)} registros")
             
         except Exception as e:
-            logger.error(f"❌ Error inicializando validador: {e}")
+            logger.error(f"Error inicializando validador: {e}")
             raise
 
     def validar_orden(self, orden_json: Dict[str, Any]):
@@ -239,7 +246,7 @@ class ValidadorOrdenesCompra:
             logger.info(f"[ORDER] Validando orden {orden_numero} para cliente {cliente} con {len(items)} artículos")
             
             if not items:
-                logger.warning("⚠️ Orden sin artículos")
+                logger.warning("Orden sin articulos")
                 raise ValueError("La orden debe tener al menos un artículo")
             
             articulos_encontrados = []
@@ -305,7 +312,7 @@ class ValidadorOrdenesCompra:
                         "motivo": f"La combinación Cliente [{cliente}] + Artículo [{item['codigo']}] NO existe en el catálogo"
                     }
                     articulos_no_encontrados.append(articulo_faltante)
-                    logger.warning(f"❌ Artículo no encontrado: {codigo} para cliente {cliente}")
+                    logger.warning(f"Articulo no encontrado: {codigo} para cliente {cliente}")
                     
                     # Guardar en cache
                     cache_manager.set(cache_key, {
@@ -338,13 +345,13 @@ class ValidadorOrdenesCompra:
             
             logger.info(f"[RESULT] Validación completada: {len(articulos_encontrados)}/{len(items)} artículos encontrados")
             if todos_existen:
-                logger.info("🎉 TODOS los artículos existen - Orden lista para SAP")
+                logger.info("TODOS los articulos existen - Orden lista para SAP")
             else:
-                logger.warning(f"⚠️ {len(articulos_no_encontrados)} artículos faltantes - Revisar antes de SAP")
+                logger.warning(f"{len(articulos_no_encontrados)} articulos faltantes - Revisar antes de SAP")
             
             return resultado
         except Exception as e:
-            logger.error(f"❌ Error validando orden: {str(e)}")
+            logger.error(f"Error validando orden: {str(e)}")
             raise ValueError(f"Error validando orden: {str(e)}")
 
 # Inicializar validador
@@ -353,19 +360,19 @@ try:
     validador = ValidadorOrdenesCompra()
     logger.info("[READY] Validador inicializado correctamente")
 except Exception as e:
-    logger.error(f"❌ Error crítico: {e}")
-    logger.error("💡 Verifica la configuración en .env y el archivo credentials.json")
+    logger.error(f"Error critico: {e}")
+    logger.error("Verifica la configuracion en .env y el archivo credentials.json")
     exit(1)
 
 @app.post("/validar-orden")
 async def validar_orden_endpoint(orden: OrdenModel):
-    logger.info(f"📥 Nueva solicitud de validación recibida")
+    logger.info(f"Nueva solicitud de validacion recibida")
     try:
         resultado = validador.validar_orden(orden.dict())
         logger.info(f"[SUCCESS] Validación exitosa para orden: {resultado['orden_compra']}")
         return JSONResponse(content=resultado, status_code=200)
     except ValueError as e:
-        logger.warning(f"⚠️ Error de validación: {str(e)}")
+        logger.warning(f"Error de validacion: {str(e)}")
         return JSONResponse(content={
             "TODOS_LOS_ARTICULOS_EXISTEN": False,
             "PUEDE_PROCESAR_EN_SAP": False,
@@ -373,7 +380,7 @@ async def validar_orden_endpoint(orden: OrdenModel):
             "mensaje": f"ERROR DE VALIDACIÓN: {str(e)}"
         }, status_code=400)
     except Exception as e:
-        logger.error(f"❌ Error interno: {str(e)}")
+        logger.error(f"Error interno: {str(e)}")
         return JSONResponse(content={
             "TODOS_LOS_ARTICULOS_EXISTEN": False,
             "PUEDE_PROCESAR_EN_SAP": False,
@@ -393,7 +400,7 @@ async def health_check():
         logger.debug(f"[HEALTH] Check exitoso: {response['catalogo_items']} items en catálogo")
         return response
     except Exception as e:
-        logger.error(f"❌ Error en health check: {str(e)}")
+        logger.error(f"Error en health check: {str(e)}")
         return JSONResponse(content={
             "status": "ERROR",
             "error": str(e)
@@ -410,7 +417,7 @@ async def debug_catalogo():
         logger.debug(f"[DEBUG] Catálogo exitoso: {len(response['primeras_5_filas'])} filas mostradas")
         return response
     except Exception as e:
-        logger.error(f"❌ Error en debug catálogo: {str(e)}")
+        logger.error(f"Error en debug catalogo: {str(e)}")
         return JSONResponse(content={
             "error": str(e)
         }, status_code=500)
@@ -424,7 +431,7 @@ async def cache_stats():
         logger.debug(f"[STATS] Cache: {stats['size']} items, hit_rate={stats['hit_rate']:.2f}")
         return stats
     except Exception as e:
-        logger.error(f"❌ Error obteniendo stats de cache: {str(e)}")
+        logger.error(f"Error obteniendo stats de cache: {str(e)}")
         return JSONResponse(content={
             "error": str(e)
         }, status_code=500)
@@ -437,7 +444,7 @@ async def clear_cache():
         cache_manager.clear()
         return {"message": "Cache limpiado exitosamente", "status": "success"}
     except Exception as e:
-        logger.error(f"❌ Error limpiando cache: {str(e)}")
+        logger.error(f"Error limpiando cache: {str(e)}")
         return JSONResponse(content={
             "error": str(e)
         }, status_code=500)

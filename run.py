@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 Script principal para ejecutar el Validador TamaPrint
 Usa la nueva estructura organizada del proyecto
@@ -6,6 +7,13 @@ Usa la nueva estructura organizada del proyecto
 
 import sys
 import os
+
+# Configurar encoding UTF-8 para Windows
+if sys.platform.startswith('win'):
+    import codecs
+    sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
+    sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'strict')
+    os.environ['PYTHONIOENCODING'] = 'utf-8'
 import argparse
 from pathlib import Path
 
@@ -58,39 +66,37 @@ Ejemplos de uso:
     # Verificar que el módulo principal existe
     validador_path = src_path / "validador.py"
     if not validador_path.exists():
-        print(f"❌ Error: No se encuentra el archivo principal en {validador_path}")
+        print(f"Error: No se encuentra el archivo principal en {validador_path}")
         print("   Asegúrate de que la estructura del proyecto esté correcta")
         sys.exit(1)
     
     # Configurar argumentos para uvicorn
-    uvicorn_args = [
-        "src.validador:app",
-        "--host", args.host,
-        "--port", str(args.port),
-        "--log-level", args.log_level
-    ]
+    uvicorn_config = {
+        "app": "src.validador:app",
+        "host": args.host,
+        "port": args.port,
+        "log_level": args.log_level,
+        "reload": args.reload
+    }
     
-    if args.reload:
-        uvicorn_args.append("--reload")
-    
-    print("🚀 Iniciando Validador TamaPrint...")
+    print("Iniciando Validador TamaPrint...")
     print(f"   Host: {args.host}")
     print(f"   Puerto: {args.port}")
-    print(f"   Modo: {'Desarrollo' if args.reload else 'Producción'}")
+    print(f"   Modo: {'Desarrollo' if args.reload else 'Produccion'}")
     print(f"   Log Level: {args.log_level}")
     print()
     
     try:
         import uvicorn
-        uvicorn.run(*uvicorn_args)
+        uvicorn.run(**uvicorn_config)
     except ImportError:
-        print("❌ Error: uvicorn no está instalado")
+        print("Error: uvicorn no esta instalado")
         print("   Ejecuta: pip install -r requirements.txt")
         sys.exit(1)
     except KeyboardInterrupt:
-        print("\n👋 Servidor detenido por el usuario")
+        print("\nServidor detenido por el usuario")
     except Exception as e:
-        print(f"❌ Error al iniciar el servidor: {e}")
+        print(f"Error al iniciar el servidor: {e}")
         sys.exit(1)
 
 if __name__ == "__main__":
