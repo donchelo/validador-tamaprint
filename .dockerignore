@@ -1,0 +1,74 @@
+# Archivos de Git
+.git
+.gitignore
+
+# Archivos de Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.coverage
+.pytest_cache/
+.mypy_cache/
+.tox/
+venv/
+env/
+
+# Archivos de desarrollo
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDEs y editores
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs y temporales
+*.log
+logs/*.log
+.bash_history
+.lesshst
+.viminfo
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de Node.js (si los hay)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Scripts de Windows
+*.bat
+*.ps1
+
+# Archivos de configuración específicos de desarrollo
+config/ngrok.exe
+.claude.json*
+.claude/
+
+# Tests (no necesarios en producción)
+tests/
+*_test.py
+test_*.py
+
+# Documentación (no necesaria en producción)
+docs/
+README.md
+*.md
+
+# Archivos específicos de desarrollo
+iniciar_completo.bat
+scripts/
+
+# IMPORTANTE: Mantener simple.py para el deploy minimal
+!simple.py

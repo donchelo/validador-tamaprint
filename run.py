@@ -44,8 +44,8 @@ Ejemplos de uso:
     parser.add_argument(
         "--port", 
         type=int, 
-        default=8000,
-        help="Puerto para el servidor (default: 8000)"
+        default=int(os.getenv("PORT", "8000")),
+        help="Puerto para el servidor (default: PORT env var o 8000)"
     )
     
     parser.add_argument(
